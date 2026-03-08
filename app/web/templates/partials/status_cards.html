@@ -1,0 +1,181 @@
+{% set runtime = state.current.ups_runtime_seconds %}
+{% set hours = (runtime // 3600) if runtime is not none else none %}
+{% set minutes = ((runtime % 3600) // 60) if runtime is not none else none %}
+
+{% set ups_status_map = {
+  'OL': 'Online',
+  'OB': 'On Battery',
+  'LB': 'Low Battery',
+  'RB': 'Replace Battery',
+  'CHRG': 'Charging',
+  'DISCHRG': 'Discharging',
+  'BYPASS': 'Bypass',
+  'CAL': 'Calibration',
+  'OFF': 'Off',
+  'OVER': 'Overloaded',
+  'TRIM': 'Trimming Voltage',
+  'BOOST': 'Boosting Voltage',
+  'FSD': 'Forced Shutdown'
+} %}
+
+{% set raw_status = state.current.ups_status or 'unknown' %}
+{% set status_parts = raw_status.split() %}
+{% set friendly_parts = [] %}
+{% for part in status_parts %}
+  {% set _ = friendly_parts.append(ups_status_map.get(part, part)) %}
+{% endfor %}
+{% set friendly_status = friendly_parts | join(', ') if friendly_parts else 'Unknown' %}
+
+{% set ups_status_class = '' %}
+{% if 'OB' in status_parts or 'LB' in status_parts or 'FSD' in status_parts %}
+  {% set ups_status_class = 'bad' %}
+{% elif 'RB' in status_parts or 'OVER' in status_parts or 'BYPASS' in status_parts or 'OFF' in status_parts %}
+  {% set ups_status_class = 'warn' %}
+{% elif 'CHRG' in status_parts or 'TRIM' in status_parts or 'BOOST' in status_parts or 'CAL' in status_parts %}
+  {% set ups_status_class = 'warn' %}
+{% elif 'OL' in status_parts %}
+  {% set ups_status_class = 'good' %}
+{% endif %}
+
+<div class="cards cards-dashboard">
+  <div class="card dashboard-tile">
+    <div class="tile-header">
+      <span class="mono-icon tile-icon" aria-hidden="true">⌁</span>
+      <div class="label">UPS</div>
+    </div>
+    <div class="value {{ ups_status_class }}">{{ friendly_status }}</div>
+    <div class="tile-details">
+      <div><span class="detail-label">Battery:</span> {{ ('%.0f'|format(state.current.ups_battery_percent)) ~ '%' if state.current.ups_battery_percent is not none else 'Unknown' }}</div>
+      <div>
+        <span class="detail-label">Runtime:</span>
+        {% if runtime is not none %}
+          {% if hours and hours > 0 %}
+            {{ hours }}h {{ minutes }}m
+          {% else %}
+            {{ minutes }}m
+          {% endif %}
+        {% else %}
+          Unknown
+        {% endif %}
+      </div>
+      <div><span class="detail-label">NUT:</span> <span class="{{ 'good' if state.current.nut_healthy else 'bad' }}">{{ 'Healthy' if state.current.nut_healthy else 'Unhealthy' if state.current.nut_healthy is not none else 'Unknown' }}</span></div>
+    </div>
+  </div>
+
+  <div class="card dashboard-tile">
+    <div class="tile-header">
+      <span class="mono-icon tile-icon" aria-hidden="true">⏻</span>
+      <div class="label">Server</div>
+    </div>
+    <div class="value {{ 'good' if state.current.server_powered_on else 'bad' }}">
+      {{ 'On' if state.current.server_powered_on else 'Off' if state.current.server_powered_on is not none else 'Unknown' }}
+    </div>
+    <div class="tile-details">
+      <div><span class="detail-label">Power Control:</span> <span class="{{ 'bad' if not settings.allow_power_control else 'good' }}">{{ 'Disabled' if not settings.allow_power_control else 'Enabled' }}</span></div>
+      <div><span class="detail-label">Last Power Attempt:</span> {{ state.current.last_power_on_attempt or 'Never' }}</div>
+      <div><span class="detail-label">USB:</span> {{ 'Present' if state.current.ups_usb_present else 'Absent' if state.current.ups_usb_present is not none else 'Unknown' }}</div>
+    </div>
+  </div>
+
+  <div class="card dashboard-tile">
+    <div class="tile-header">
+      <span class="mono-icon tile-icon" aria-hidden="true">⌘</span>
+      <div class="label">Connections</div>
+    </div>
+    <div class="value {{ 'good' if state.current.nanokvm_authenticated else 'bad' }}">
+      {{ 'Ready' if state.current.nanokvm_authenticated else 'Attention' if state.current.nanokvm_authenticated is not none else 'Unknown' }}
+    </div>
+    <div class="tile-details">
+      <div><span class="detail-label">NanoKVM:</span> {{ 'Authenticated' if state.current.nanokvm_authenticated else 'Failed' if state.current.nanokvm_authenticated is not none else 'Unknown' }}</div>
+      <div><span class="detail-label">Last Error:</span> {{ state.current.last_error or 'None' }}</div>
+      <div><span class="detail-label">Last Action:</span> {{ state.current.last_action or 'None' }}</div>
+    </div>
+  </div>
+
+  <div class="card dashboard-tile">
+    <div class="tile-header">
+      <span class="mono-icon tile-icon" aria-hidden="true">◷</span>
+      <div class="label">Watchdog</div>
+    </div>
+    <div class="value countdown-main"
+         data-next-check="{{ state.current.next_check.isoformat() if state.current.next_check else '' }}">
+      --
+    </div>
+    <div class="tile-details">
+      <div>
+        <span class="detail-label">Last Execution:</span>
+        <span class="elapsed-time"
+              data-last-check="{{ state.current.last_check.isoformat() if state.current.last_check else '' }}">
+          --
+        </span>
+      </div>
+      <div><span class="detail-label">Poll Interval:</span> {{ settings.poll_interval }}s</div>
+      <div><span class="detail-label">Last Action:</span> {{ state.current.last_action or 'None' }}</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  function formatElapsed(diff) {
+    if (isNaN(diff) || diff < 0) return '--';
+    if (diff < 60) return diff + 's ago';
+
+    const mins = Math.floor(diff / 60);
+    const secs = diff % 60;
+    if (mins < 60) return mins + ':' + String(secs).padStart(2, '0') + ' ago';
+
+    const hrs = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    return hrs + 'h ' + remMins + 'm ago';
+  }
+
+  function formatCountdownMain(diff) {
+    if (isNaN(diff)) return '--';
+    if (diff <= 0) return 'Due now';
+    if (diff < 60) return diff + 's';
+
+    const mins = Math.floor(diff / 60);
+    const secs = diff % 60;
+    if (mins < 60) return mins + ':' + String(secs).padStart(2, '0');
+
+    const hrs = Math.floor(mins / 60);
+    const remMins = mins % 60;
+    return hrs + 'h ' + remMins + 'm';
+  }
+
+  function updateTimers() {
+    const now = new Date();
+
+    document.querySelectorAll('.elapsed-time').forEach(function(el) {
+      const raw = el.getAttribute('data-last-check');
+      if (!raw) {
+        el.textContent = 'Never';
+        return;
+      }
+
+      const target = new Date(raw);
+      const diff = Math.floor((now.getTime() - target.getTime()) / 1000);
+      el.textContent = formatElapsed(diff);
+    });
+
+    document.querySelectorAll('.countdown-main').forEach(function(el) {
+      const raw = el.getAttribute('data-next-check');
+      if (!raw) {
+        el.textContent = '--';
+        return;
+      }
+
+      const target = new Date(raw);
+      const diff = Math.floor((target.getTime() - now.getTime()) / 1000);
+      el.textContent = formatCountdownMain(diff);
+    });
+  }
+
+  updateTimers();
+  if (window._spwTimer) {
+    clearInterval(window._spwTimer);
+  }
+  window._spwTimer = setInterval(updateTimers, 1000);
+})();
+</script>

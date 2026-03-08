@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ settings.app_name if settings else 'Server Power Watchdog' }}</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="sidebar-title">{{ settings.app_name if settings else 'Server Power Watchdog' }}</div>
+          <div class="sidebar-subtitle">Orange Pi / Docker-ready</div>
+        </div>
+        <button class="sidebar-toggle sidebar-toggle-desktop"
+                type="button"
+                aria-label="Toggle navigation"
+                onclick="document.body.classList.toggle('sidebar-collapsed')">
+          ☰
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
+          <span class="mono-icon nav-icon" aria-hidden="true">◧</span>
+          <span class="nav-text">Dashboard</span>
+        </a>
+        <a href="/settings" class="nav-link {% if request.url.path.startswith('/settings') %}active{% endif %}">
+          <span class="mono-icon nav-icon" aria-hidden="true">⚙</span>
+          <span class="nav-text">Settings</span>
+        </a>
+      </nav>
+    </aside>
+
+    <div class="content-shell">
+      <header class="topbar">
+        <button class="sidebar-toggle sidebar-toggle-mobile"
+                type="button"
+                aria-label="Toggle navigation"
+                onclick="document.body.classList.toggle('sidebar-open')">
+          ☰
+        </button>
+        <div>
+          <h1 class="topbar-title">
+            {% if request.url.path == '/' %}
+              Dashboard
+            {% elif request.url.path.startswith('/settings') %}
+              Settings
+            {% else %}
+              {{ settings.app_name if settings else 'Server Power Watchdog' }}
+            {% endif %}
+          </h1>
+          <div class="muted">Server Power Watchdog</div>
+        </div>
+      </header>
+
+      <main class="shell-main">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <div class="sidebar-backdrop" onclick="document.body.classList.remove('sidebar-open')"></div>
+</body>
+</html>

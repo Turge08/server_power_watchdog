@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h2>Settings</h2>
+  <p class="muted">Settings are stored in <code>data/settings.json</code>.</p>
+
+  {% if save_message %}
+    <div class="save-message">{{ save_message }}</div>
+  {% endif %}
+
+  <form method="post" action="/settings" class="settings-form">
+    <section class="settings-section">
+      <div class="section-heading">
+        <span class="mono-icon section-icon" aria-hidden="true">⚙</span>
+        <h3>Application</h3>
+      </div>
+      <div class="form-grid">
+        <label>
+          <span>App Name</span>
+          <input type="text" name="app_name" value="{{ settings_masked.app_name }}">
+        </label>
+
+        <label>
+          <span>Poll Interval (seconds)</span>
+          <input type="number" name="poll_interval" value="{{ settings_masked.poll_interval }}">
+        </label>
+
+        <label>
+          <span>Power-on Cooldown (seconds)</span>
+          <input type="number" name="power_on_cooldown" value="{{ settings_masked.power_on_cooldown }}">
+        </label>
+
+        <label>
+          <span>SQLite Path</span>
+          <input type="text" name="sqlite_path" value="{{ settings_masked.sqlite_path }}">
+        </label>
+
+        <label>
+          <span>Max Events in Memory</span>
+          <input type="number" name="max_events_in_memory" value="{{ settings_masked.max_events_in_memory }}">
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" name="debug" {% if settings_masked.debug %}checked{% endif %}>
+          <span>Debug</span>
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" name="allow_power_control" {% if settings_masked.allow_power_control %}checked{% endif %}>
+          <span>Allow Power Control</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <div class="section-heading">
+        <span class="mono-icon section-icon" aria-hidden="true">⌁</span>
+        <h3>UPS / NUT</h3>
+      </div>
+      <div class="form-grid">
+        <label>
+          <span>NUT UPS Name</span>
+          <input type="text" name="nut_ups_name" value="{{ settings_masked.nut_ups_name }}">
+        </label>
+
+        <label>
+          <span>NUT Host</span>
+          <input type="text" name="nut_host" value="{{ settings_masked.nut_host }}">
+        </label>
+
+        <label>
+          <span>NUT Port</span>
+          <input type="number" name="nut_port" value="{{ settings_masked.nut_port }}">
+        </label>
+
+        <label>
+          <span>NUT Target Override</span>
+          <input type="text" name="nut_target_override" value="{{ settings_masked.nut_target_override }}">
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" name="nut_use_subprocess" {% if settings_masked.nut_use_subprocess %}checked{% endif %}>
+          <span>Use NUT Subprocess</span>
+        </label>
+
+        <label>
+          <span>UPS USB ID</span>
+          <input type="text" name="ups_usb_id" value="{{ settings_masked.ups_usb_id }}">
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" name="usb_detection_enabled" {% if settings_masked.usb_detection_enabled %}checked{% endif %}>
+          <span>USB Detection Enabled</span>
+        </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" name="telegram_notify_ups_status_changes" {% if settings_masked.telegram_notify_ups_status_changes %}checked{% endif %}>
+          <span>Telegram Notify on UPS Status Changes</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <div class="section-heading">
+        <span class="mono-icon section-icon" aria-hidden="true">⌘</span>
+        <h3>NanoKVM</h3>
+      </div>
+      <div class="form-grid">
+        <label>
+          <span>NanoKVM Scheme</span>
+          <input type="text" name="nanokvm_scheme" value="{{ settings_masked.nanokvm_scheme }}">
+        </label>
+
+        <label>
+          <span>NanoKVM Host</span>
+          <input type="text" name="nanokvm_host" value="{{ settings_masked.nanokvm_host }}">
+        </label>
+
+        <label>
+          <span>NanoKVM Username</span>
+          <input type="text" name="nanokvm_username" value="{{ settings_masked.nanokvm_username }}">
+        </label>
+
+        <label>
+          <span>NanoKVM Password</span>
+          <input type="password" name="nanokvm_password" value="">
+          <small>Leave blank to keep current value.</small>
+        </label>
+
+        <label>
+          <span>NanoKVM Timeout (seconds)</span>
+          <input type="number" name="nanokvm_timeout_seconds" value="{{ settings_masked.nanokvm_timeout_seconds }}">
+        </label>
+
+        <label>
+          <span>NanoKVM Power Duration (ms)</span>
+          <input type="number" name="nanokvm_power_duration_ms" value="{{ settings_masked.nanokvm_power_duration_ms }}">
+        </label>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <div class="section-heading">
+        <span class="mono-icon section-icon" aria-hidden="true">◫</span>
+        <h3>MQTT</h3>
+      </div>
+      <div class="form-grid">
+        <label>
+          <span>MQTT Host</span>
+          <input type="text" name="mqtt_host" value="{{ settings_masked.mqtt_host }}">
+        </label>
+
+        <label>
+          <span>MQTT Port</span>
+          <input type="number" name="mqtt_port" value="{{ settings_masked.mqtt_port }}">
+        </label>
+
+        <label>
+          <span>MQTT User</span>
+          <input type="text" name="mqtt_user" value="{{ settings_masked.mqtt_user }}">
+        </label>
+
+        <label>
+          <span>MQTT Password</span>
+          <input type="password" name="mqtt_password" value="">
+          <small>Leave blank to keep current value.</small>
+        </label>
+
+        <label>
+          <span>MQTT Base Topic</span>
+          <input type="text" name="mqtt_base_topic" value="{{ settings_masked.mqtt_base_topic }}">
+        </label>
+      </div>
+
+      <div class="form-actions section-actions">
+        <button class="btn" type="submit" formaction="/settings/test-mqtt" formmethod="post">
+          Send Test MQTT
+        </button>
+      </div>
+    </section>
+
+    <section class="settings-section">
+      <div class="section-heading">
+        <span class="mono-icon section-icon" aria-hidden="true">✉</span>
+        <h3>Telegram</h3>
+      </div>
+      <div class="form-grid">
+        <label>
+          <span>Telegram Token</span>
+          <input type="password" name="telegram_token" value="">
+          <small>Leave blank to keep current value.</small>
+        </label>
+
+        <label>
+          <span>Telegram Chat ID</span>
+          <input type="password" name="telegram_chat_id" value="">
+          <small>Leave blank to keep current value.</small>
+        </label>
+      </div>
+
+      <div class="form-actions section-actions">
+        <button class="btn" type="submit" formaction="/settings/test-telegram" formmethod="post">
+          Send Test Message
+        </button>
+      </div>
+    </section>
+
+    <div class="form-actions">
+      <button class="btn" type="submit">Save Settings</button>
+    </div>
+  </form>
+</section>
+{% endblock %}
