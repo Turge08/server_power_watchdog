@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from dataclasses import fields
 from pathlib import Path
 from typing import Any
 
-from app.config import AppSettings
+from app.config import AppSettings, default_nut_users
 
 
 SECRET_FIELDS = {
@@ -19,6 +20,7 @@ SECRET_FIELDS = {
 BOOL_FIELDS = {
     "debug",
     "allow_power_control",
+    "nut_enabled",
     "nut_use_subprocess",
     "usb_detection_enabled",
     "telegram_notify_ups_status_changes",
@@ -28,11 +30,14 @@ INT_FIELDS = {
     "poll_interval",
     "power_on_cooldown",
     "nut_port",
+    "nut_pollinterval",
     "nanokvm_timeout_seconds",
     "nanokvm_power_duration_ms",
     "mqtt_port",
     "max_events_in_memory",
 }
+
+NUT_USER_PATTERN = re.compile(r"^nut_user_(\d+)_(username|password|actions|instcmds|upsmon)$")
 
 
 class SettingsStore:
@@ -68,7 +73,10 @@ class SettingsStore:
         merged = defaults.copy()
         for key, value in raw.items():
             if key in merged:
-                merged[key] = self._coerce_value(key, value)
+                if key == "nut_users" and isinstance(value, list):
+                    merged[key] = value
+                else:
+                    merged[key] = self._coerce_value(key, value)
 
         return AppSettings(**merged)
 
@@ -86,11 +94,46 @@ class SettingsStore:
     def get(self) -> AppSettings:
         return self._settings
 
+    def _parse_nut_users(self, form_data: dict[str, Any], existing_users: list[dict[str, str]]) -> list[dict[str, str]]:
+        rows: dict[int, dict[str, str]] = {}
+
+        for key, value in form_data.items():
+            match = NUT_USER_PATTERN.match(key)
+            if not match:
+                continue
+
+            idx = int(match.group(1))
+            field_name = match.group(2)
+            rows.setdefault(idx, {
+                "username": "",
+                "password": "",
+                "actions": "",
+                "instcmds": "",
+                "upsmon": "",
+            })
+            rows[idx][field_name] = str(value).strip()
+
+        users: list[dict[str, str]] = []
+        for idx in sorted(rows.keys()):
+            row = rows[idx]
+            if not row["username"]:
+                continue
+
+            if not row["password"] and idx < len(existing_users):
+                row["password"] = existing_users[idx].get("password", "")
+
+            users.append(row)
+
+        return users or default_nut_users()
+
     def update_from_form(self, form_data: dict[str, Any]) -> AppSettings:
         current = self.get().to_dict()
         valid_fields = {f.name for f in fields(AppSettings)}
 
         for key in valid_fields:
+            if key == "nut_users":
+                continue
+
             if key in BOOL_FIELDS:
                 current[key] = key in form_data
                 continue
@@ -106,6 +149,8 @@ class SettingsStore:
                     continue
 
             current[key] = self._coerce_value(key, value)
+
+        current["nut_users"] = self._parse_nut_users(form_data, self.get().nut_users)
 
         updated = AppSettings(**current)
         self.save(updated)

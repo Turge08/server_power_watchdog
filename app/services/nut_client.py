@@ -18,9 +18,17 @@ class NUTClient:
     def __init__(self, settings_getter) -> None:
         self.settings_getter = settings_getter
 
+    def _settings(self):
+        return self.settings_getter()
+
     def _target(self) -> str:
-        settings = self.settings_getter()
-        return settings.nut_target_override or f"{settings.nut_ups_name}@{settings.nut_host}"
+        settings = self._settings()
+
+        if settings.nut_target_override:
+            return settings.nut_target_override
+
+        host = settings.nut_host.strip() or "localhost"
+        return f"{settings.nut_ups_name}@{host}"
 
     def _clean_lines(self, text: str) -> list[str]:
         return [line.strip() for line in text.splitlines() if line.strip()]
@@ -61,6 +69,17 @@ class NUTClient:
             return None
 
     def get_status(self) -> NUTStatusResult:
+        settings = self._settings()
+
+        if not settings.nut_enabled or settings.nut_connection_mode == "disabled":
+            return NUTStatusResult(
+                healthy=False,
+                status_text="Disabled",
+                raw_output="NUT disabled by configuration",
+                battery_percent=None,
+                runtime_seconds=None,
+            )
+
         status_rc, status_text, status_raw = self._run_upsc_value("ups.status")
 
         raw_parts = [f"ups.status={status_text}" if status_text else f"ups.status_raw={status_raw}"]
@@ -96,6 +115,7 @@ class NUTClient:
             "communication",
             "connection refused",
             "data stale",
+            "unknown ups",
         )
         lowered = raw_output.lower()
         healthy = not any(marker in lowered for marker in bad_markers)

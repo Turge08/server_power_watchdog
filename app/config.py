@@ -1,8 +1,27 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from pathlib import Path
 from typing import Any
+
+
+def default_nut_users() -> list[dict[str, str]]:
+    return [
+        {
+            "username": "admin",
+            "password": "changeme",
+            "actions": "SET",
+            "instcmds": "ALL",
+            "upsmon": "",
+        },
+        {
+            "username": "monuser",
+            "password": "changeme",
+            "actions": "",
+            "instcmds": "",
+            "upsmon": "master",
+        },
+    ]
 
 
 @dataclass
@@ -17,11 +36,22 @@ class AppSettings:
 
     allow_power_control: bool = False
 
-    nut_ups_name: str = "Back-UPSXS1300G"
-    nut_host: str = "localhost"
+    nut_enabled: bool = True
+    nut_connection_mode: str = "local"   # disabled | local | remote
+    nut_mode: str = "netserver"
+    nut_config_dir: str = "/etc/nut"
+    nut_listen_host: str = "0.0.0.0"
     nut_port: int = 3493
-    nut_use_subprocess: bool = True
+    nut_host: str = "localhost"
     nut_target_override: str = ""
+    nut_use_subprocess: bool = True
+
+    nut_ups_name: str = "ups"
+    nut_driver: str = "usbhid-ups"
+    nut_driver_port: str = "auto"
+    nut_desc: str = "UPS"
+    nut_pollinterval: int = 5
+    nut_users: list[dict[str, str]] = field(default_factory=default_nut_users)
 
     ups_usb_id: str = "051d:"
     usb_detection_enabled: bool = True

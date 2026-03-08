@@ -8,58 +8,30 @@
     <div class="save-message">{{ save_message }}</div>
   {% endif %}
 
-  <form method="post" action="/settings" class="settings-form">
-    <section class="settings-section">
-      <div class="section-heading">
-        <span class="mono-icon section-icon" aria-hidden="true">⚙</span>
-        <h3>Application</h3>
-      </div>
-      <div class="form-grid">
-        <label>
-          <span>App Name</span>
-          <input type="text" name="app_name" value="{{ settings_masked.app_name }}">
-        </label>
-
-        <label>
-          <span>Poll Interval (seconds)</span>
-          <input type="number" name="poll_interval" value="{{ settings_masked.poll_interval }}">
-        </label>
-
-        <label>
-          <span>Power-on Cooldown (seconds)</span>
-          <input type="number" name="power_on_cooldown" value="{{ settings_masked.power_on_cooldown }}">
-        </label>
-
-        <label>
-          <span>SQLite Path</span>
-          <input type="text" name="sqlite_path" value="{{ settings_masked.sqlite_path }}">
-        </label>
-
-        <label>
-          <span>Max Events in Memory</span>
-          <input type="number" name="max_events_in_memory" value="{{ settings_masked.max_events_in_memory }}">
-        </label>
-
-        <label class="checkbox-label">
-          <input type="checkbox" name="debug" {% if settings_masked.debug %}checked{% endif %}>
-          <span>Debug</span>
-        </label>
-
-        <label class="checkbox-label">
-          <input type="checkbox" name="allow_power_control" {% if settings_masked.allow_power_control %}checked{% endif %}>
-          <span>Allow Power Control</span>
-        </label>
-      </div>
-    </section>
-
+  <form method="post" action="/settings" class="settings-form" id="settings-form">
     <section class="settings-section">
       <div class="section-heading">
         <span class="mono-icon section-icon" aria-hidden="true">⌁</span>
-        <h3>UPS / NUT</h3>
+        <h3>NUT</h3>
       </div>
+
       <div class="form-grid">
+        <label class="checkbox-label">
+          <input type="checkbox" name="nut_enabled" {% if settings_masked.nut_enabled %}checked{% endif %}>
+          <span>NUT Enabled</span>
+        </label>
+
         <label>
-          <span>NUT UPS Name</span>
+          <span>Connection Mode</span>
+          <select name="nut_connection_mode" id="nut_connection_mode" onchange="toggleNutModeSections()">
+            <option value="disabled" {% if settings_masked.nut_connection_mode == 'disabled' %}selected{% endif %}>disabled</option>
+            <option value="local" {% if settings_masked.nut_connection_mode == 'local' %}selected{% endif %}>local</option>
+            <option value="remote" {% if settings_masked.nut_connection_mode == 'remote' %}selected{% endif %}>remote</option>
+          </select>
+        </label>
+
+        <label>
+          <span>UPS Name</span>
           <input type="text" name="nut_ups_name" value="{{ settings_masked.nut_ups_name }}">
         </label>
 
@@ -74,30 +46,68 @@
         </label>
 
         <label>
-          <span>NUT Target Override</span>
+          <span>Target Override</span>
           <input type="text" name="nut_target_override" value="{{ settings_masked.nut_target_override }}">
         </label>
-
-        <label class="checkbox-label">
-          <input type="checkbox" name="nut_use_subprocess" {% if settings_masked.nut_use_subprocess %}checked{% endif %}>
-          <span>Use NUT Subprocess</span>
-        </label>
-
-        <label>
-          <span>UPS USB ID</span>
-          <input type="text" name="ups_usb_id" value="{{ settings_masked.ups_usb_id }}">
-        </label>
-
-        <label class="checkbox-label">
-          <input type="checkbox" name="usb_detection_enabled" {% if settings_masked.usb_detection_enabled %}checked{% endif %}>
-          <span>USB Detection Enabled</span>
-        </label>
-
-        <label class="checkbox-label">
-          <input type="checkbox" name="telegram_notify_ups_status_changes" {% if settings_masked.telegram_notify_ups_status_changes %}checked{% endif %}>
-          <span>Telegram Notify on UPS Status Changes</span>
-        </label>
       </div>
+
+      <div id="nut-local-section">
+        <h4>Local NUT Reference</h4>
+
+        <div class="form-grid">
+          <label>
+            <span>NUT Mode</span>
+            <select name="nut_mode">
+              <option value="standalone" {% if settings_masked.nut_mode == 'standalone' %}selected{% endif %}>standalone</option>
+              <option value="netserver" {% if settings_masked.nut_mode == 'netserver' %}selected{% endif %}>netserver</option>
+            </select>
+          </label>
+
+          <label>
+            <span>NUT Config Directory</span>
+            <input type="text" name="nut_config_dir" value="{{ settings_masked.nut_config_dir }}">
+          </label>
+
+          <label>
+            <span>Listen Host</span>
+            <input type="text" name="nut_listen_host" value="{{ settings_masked.nut_listen_host }}">
+          </label>
+
+          <label>
+            <span>Driver</span>
+            <input type="text" name="nut_driver" value="{{ settings_masked.nut_driver }}">
+          </label>
+
+          <label>
+            <span>Driver Port</span>
+            <input type="text" name="nut_driver_port" value="{{ settings_masked.nut_driver_port }}">
+          </label>
+
+          <label>
+            <span>Description</span>
+            <input type="text" name="nut_desc" value="{{ settings_masked.nut_desc }}">
+          </label>
+
+          <label>
+            <span>Poll Interval</span>
+            <input type="number" name="nut_pollinterval" value="{{ settings_masked.nut_pollinterval }}">
+          </label>
+        </div>
+
+        <p class="muted">
+          Local NUT configuration is currently read-only from the app. Use Docker-mounted NUT config files for local NUT changes.
+        </p>
+      </div>
+
+      <div class="form-actions section-actions">
+        <button class="btn" type="submit" formaction="/settings/test-nut" formmethod="post">Test NUT</button>
+      </div>
+
+      {% if nut_test_result %}
+      <div class="save-message">
+        <pre class="pre-output">{{ nut_test_result }}</pre>
+      </div>
+      {% endif %}
     </section>
 
     <section class="settings-section">
@@ -173,9 +183,7 @@
       </div>
 
       <div class="form-actions section-actions">
-        <button class="btn" type="submit" formaction="/settings/test-mqtt" formmethod="post">
-          Send Test MQTT
-        </button>
+        <button class="btn" type="submit" formaction="/settings/test-mqtt" formmethod="post">Send Test MQTT</button>
       </div>
     </section>
 
@@ -196,12 +204,15 @@
           <input type="password" name="telegram_chat_id" value="">
           <small>Leave blank to keep current value.</small>
         </label>
+
+        <label class="checkbox-label">
+          <input type="checkbox" name="telegram_notify_ups_status_changes" {% if settings_masked.telegram_notify_ups_status_changes %}checked{% endif %}>
+          <span>Notify on UPS Status Changes</span>
+        </label>
       </div>
 
       <div class="form-actions section-actions">
-        <button class="btn" type="submit" formaction="/settings/test-telegram" formmethod="post">
-          Send Test Message
-        </button>
+        <button class="btn" type="submit" formaction="/settings/test-telegram" formmethod="post">Send Test Message</button>
       </div>
     </section>
 
@@ -210,4 +221,14 @@
     </div>
   </form>
 </section>
+
+<script>
+function toggleNutModeSections() {
+  const mode = document.getElementById('nut_connection_mode').value;
+  const localSection = document.getElementById('nut-local-section');
+  localSection.style.display = mode === 'local' ? 'block' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', toggleNutModeSections);
+</script>
 {% endblock %}

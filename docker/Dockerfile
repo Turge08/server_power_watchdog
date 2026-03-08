@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     openssl \
     usbutils \
+    procps \
     nut \
     nut-client \
     nut-server \
@@ -35,11 +36,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app/ ./app/
 COPY docker/docker-entrypoint.sh /docker-entrypoint.sh
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY docker/nut/ /etc/nut/
+COPY nut/ /etc/nut/
 
 RUN chmod +x /docker-entrypoint.sh && \
-    mkdir -p /config /config/data /config/logs /config/nut /var/run/nut && \
-    chmod -R 777 /config /var/run/nut
+    mkdir -p /config /config/data /config/logs /config/nut /var/run/nut /run/nut && \
+    chmod -R 777 /config /var/run/nut /run/nut
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:${WEB_PORT}/ || exit 1
