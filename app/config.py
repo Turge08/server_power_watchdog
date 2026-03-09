@@ -33,19 +33,17 @@ class AppSettings:
     sqlite_path: str = "./data/watchdog.db"
     settings_path: str = "./data/settings.json"
     max_events_in_memory: int = 300
-
     allow_power_control: bool = False
 
     nut_enabled: bool = True
-    nut_connection_mode: str = "local"   # disabled | local | remote
+    nut_connection_mode: str = "local"  # disabled | local | remote
     nut_mode: str = "netserver"
-    nut_config_dir: str = "/etc/nut"
+    nut_config_dir: str = "/config/data/nut"
     nut_listen_host: str = "0.0.0.0"
     nut_port: int = 3493
     nut_host: str = "localhost"
     nut_target_override: str = ""
     nut_use_subprocess: bool = True
-
     nut_ups_name: str = "ups"
     nut_driver: str = "usbhid-ups"
     nut_driver_port: str = "auto"

@@ -8,7 +8,6 @@ from app.services.mqtt_service import MQTTService
 from app.services.nut_manager import NUTManager
 from app.services.telegram_service import TelegramService
 
-
 templates = Jinja2Templates(directory="app/web/templates")
 router = APIRouter()
 
@@ -41,14 +40,13 @@ async def settings_page(request: Request):
 async def settings_save(request: Request):
     form = await request.form()
     form_data = dict(form)
-
     try:
         request.app.state.settings_store.update_from_form(form_data)
+        NUTManager(request.app.state.settings_store.get).write_config()
         request.app.state.save_message = "Settings saved."
         request.app.state.nut_test_result = ""
     except Exception as exc:
         request.app.state.save_message = f"Failed to save settings: {exc}"
-
     return templates.TemplateResponse("settings.html", template_context(request))
 
 
@@ -56,14 +54,12 @@ async def settings_save(request: Request):
 async def settings_test_telegram(request: Request):
     form = await request.form()
     request.app.state.settings_store.update_from_form(dict(form))
-
     telegram = TelegramService(request.app.state.settings_store.get)
     try:
         await telegram.send_test_message()
         request.app.state.save_message = "Telegram test message sent."
     except Exception as exc:
         request.app.state.save_message = f"Telegram test failed: {exc}"
-
     return templates.TemplateResponse("settings.html", template_context(request))
 
 
@@ -71,14 +67,12 @@ async def settings_test_telegram(request: Request):
 async def settings_test_mqtt(request: Request):
     form = await request.form()
     request.app.state.settings_store.update_from_form(dict(form))
-
     mqtt = MQTTService(request.app.state.settings_store.get)
     try:
         await mqtt.send_test_message()
         request.app.state.save_message = "MQTT test message sent."
     except Exception as exc:
         request.app.state.save_message = f"MQTT test failed: {exc}"
-
     return templates.TemplateResponse("settings.html", template_context(request))
 
 
@@ -86,9 +80,10 @@ async def settings_test_mqtt(request: Request):
 async def settings_test_nut(request: Request):
     form = await request.form()
     request.app.state.settings_store.update_from_form(dict(form))
-
     nut_manager = NUTManager(request.app.state.settings_store.get)
+
     try:
+        nut_manager.write_config()
         request.app.state.nut_test_result = nut_manager.test()
         request.app.state.save_message = "NUT test completed."
     except Exception as exc:

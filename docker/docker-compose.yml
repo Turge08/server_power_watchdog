@@ -1,18 +1,13 @@
 services:
-  spw:
+  server-power-watchdog:
     build:
       context: ..
       dockerfile: docker/Dockerfile
     container_name: server-power-watchdog
-    restart: unless-stopped
-    privileged: true
-    environment:
-      - TZ=America/Toronto
-      - WEB_PORT=8080
-    volumes:
-      - ../data:/config/data
-      - ../nut:/etc/nut
-      - /dev/bus/usb:/dev/bus/usb
     ports:
       - "8080:8080"
       - "3493:3493"
+    volumes:
+      - ../data:/config/data
+      - /dev/bus/usb:/dev/bus/usb
+    restart: unless-stopped

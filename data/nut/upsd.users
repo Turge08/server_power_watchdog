@@ -1,0 +1,8 @@
+[admin]
+  password = changeme
+  actions = SET
+  instcmds = ALL
+
+[monuser]
+  password = changeme
+  upsmon master
