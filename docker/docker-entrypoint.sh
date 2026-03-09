@@ -64,7 +64,7 @@ chmod=0700
 supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
 [program:nut-driver]
-command=/lib/nut/usbhid-ups -a ${UPS_NAME} -F
+command=/bin/sh -c '/lib/nut/usbhid-ups -a ${UPS_NAME} -F & pid=$!; for i in 1 2 3 4 5 6 7 8 9 10; do if [ -S /run/nut/usbhid-ups-${UPS_NAME} ]; then chgrp nut /run/nut/usbhid-ups-${UPS_NAME} && chmod 660 /run/nut/usbhid-ups-${UPS_NAME}; break; fi; sleep 1; done; wait $pid'
 priority=10
 autostart=true
 autorestart=true
