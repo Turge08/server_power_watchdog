@@ -64,7 +64,7 @@ chmod=0700
 supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
 [program:nut-driver]
-command=/bin/sh -c '/lib/nut/usbhid-ups -a ${UPS_NAME} -F & pid=$!; for i in 1 2 3 4 5 6 7 8 9 10; do if [ -S /run/nut/usbhid-ups-${UPS_NAME} ]; then chgrp nut /run/nut/usbhid-ups-${UPS_NAME} && chmod 660 /run/nut/usbhid-ups-${UPS_NAME}; break; fi; sleep 1; done; wait $pid'
+command=/lib/nut/usbhid-ups -a ${UPS_NAME} -F
 priority=10
 autostart=true
 autorestart=true
@@ -73,8 +73,18 @@ stdout_logfile_maxbytes=0
 stderr_logfile=/dev/stderr
 stderr_logfile_maxbytes=0
 
+[program:nut-socket-fix]
+command=/bin/sh -c 'while true; do if [ -S /run/nut/usbhid-ups-${UPS_NAME} ]; then chgrp nut /run/nut/usbhid-ups-${UPS_NAME} 2>/dev/null || true; chmod 660 /run/nut/usbhid-ups-${UPS_NAME} 2>/dev/null || true; fi; sleep 1; done'
+priority=15
+autostart=true
+autorestart=true
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+
 [program:upsd]
-command=/usr/sbin/upsd -F
+command=/bin/sh -c 'sleep 5; exec /usr/sbin/upsd -F'
 priority=20
 autostart=true
 autorestart=true
