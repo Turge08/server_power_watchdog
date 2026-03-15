@@ -12,3 +12,5 @@ services:
       - /dev/bus/usb:/dev/bus/usb
     restart: unless-stopped
     privileged: true
+    environment:
+      - TZ=America/Toronto
