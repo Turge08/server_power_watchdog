@@ -72,7 +72,7 @@
     </div>
     <div class="tile-details">
       <div><span class="detail-label">Power Control:</span> <span class="{{ 'bad' if not settings.allow_power_control else 'good' }}">{{ 'Disabled' if not settings.allow_power_control else 'Enabled' }}</span></div>
-      <div><span class="detail-label">Last Power Attempt:</span> {{ state.current.last_power_on_attempt or 'Never' }}</div>
+      <div><span class="detail-label">Last Power Attempt:</span> {{ state.current.last_power_on_attempt | datetime_local if state.current.last_power_on_attempt else 'Never' }}</div>
       <div><span class="detail-label">USB:</span> {{ 'Present' if state.current.ups_usb_present else 'Absent' if state.current.ups_usb_present is not none else 'Unknown' }}</div>
     </div>
   </div>

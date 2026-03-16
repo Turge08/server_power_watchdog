@@ -8,8 +8,8 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import AppSettings
 from app.db import EventRepository
+from app.models import utcnow
 from app.services.monitor import MonitorService
-from app.services.nut_manager import NUTManager
 from app.settings_store import SettingsStore
 from app.state import StateStore
 from app.web.routes import router
@@ -20,24 +20,23 @@ async def lifespan(app: FastAPI):
     defaults = AppSettings.default()
     settings_store = SettingsStore(defaults.settings_path)
     settings = settings_store.get()
-
     event_repo = EventRepository(settings.sqlite_path)
     store = StateStore(event_repo=event_repo, max_events=settings.max_events_in_memory)
     monitor = MonitorService(store, settings_store)
-
-    if settings.nut_enabled and settings.nut_connection_mode == "local":
-        NUTManager(settings_store.get).write_config()
 
     app.state.store = store
     app.state.monitor = monitor
     app.state.settings_store = settings_store
     app.state.save_message = ""
-    app.state.nut_test_result = ""
+
+    store.add_event("info", "app", "Application starting", utcnow())
 
     task = asyncio.create_task(monitor.run_forever())
+
     try:
         yield
     finally:
+        store.add_event("info", "app", "Application shutting down", utcnow())
         task.cancel()
         try:
             await task

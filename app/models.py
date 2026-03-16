@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional, List
@@ -7,6 +6,21 @@ from typing import Optional, List
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def to_localtime(dt: Optional[datetime]) -> Optional[datetime]:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone()
+
+
+def format_localtime(dt: Optional[datetime], fmt: str = "%Y-%m-%d %I:%M:%S %p %Z") -> str:
+    local_dt = to_localtime(dt)
+    if local_dt is None:
+        return "--"
+    return local_dt.strftime(fmt)
 
 
 @dataclass

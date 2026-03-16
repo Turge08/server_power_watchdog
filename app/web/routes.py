@@ -1,14 +1,16 @@
 from __future__ import annotations
-
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+from app.models import format_localtime
 from app.services.mqtt_service import MQTTService
 from app.services.nut_manager import NUTManager
 from app.services.telegram_service import TelegramService
 
 templates = Jinja2Templates(directory="app/web/templates")
+templates.env.filters["datetime_local"] = format_localtime
+
 router = APIRouter()
 
 
@@ -24,7 +26,6 @@ def template_context(request: Request, extra: dict | None = None) -> dict:
     if extra:
         context.update(extra)
     return context
-
 
 @router.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):

@@ -11,7 +11,7 @@
   <tbody>
     {% for event in state.events[:25] %}
     <tr>
-      <td>{{ event.ts }}</td>
+      <td>{{ event.ts | datetime_local }}</td>
       <td>{{ event.level }}</td>
       <td>{{ event.source }}</td>
       <td>{{ event.message }}</td>

@@ -6,6 +6,9 @@ services:
       - "8080:8080"
       - "3493:3493"
     volumes:
-      - ~/server_power_watchdog/data:/config/data
+      - /home/orangepi/server_power_watchdog/data:/config/data
       - /dev/bus/usb:/dev/bus/usb
     restart: unless-stopped
+    privileged: true
+    environment:
+      - TZ=America/Toronto
